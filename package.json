@@ -1,0 +1,17 @@
+{
+  "name": "sec-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type":"module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "epten08",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1",
+    "openapi3-ts": "^4.5.0",
+    "uuid": "^13.0.0"
+  }
+}
