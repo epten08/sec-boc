@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { Finding, Severity } from "../findings/finding";
 import { sortByRisk } from "../findings/normalizer";
 import { RiskEngine } from "../findings/risk.engine";
+import { AttackAnalyzer, SecurityVerdict } from "../findings/attack.analyzer";
 
 export interface CliSummaryOptions {
   maxFindings?: number;
@@ -12,6 +13,7 @@ export interface CliSummaryOptions {
 export class CliSummary {
   private options: Required<CliSummaryOptions>;
   private riskEngine: RiskEngine;
+  private attackAnalyzer: AttackAnalyzer;
 
   constructor(options: CliSummaryOptions = {}) {
     this.options = {
@@ -21,23 +23,35 @@ export class CliSummary {
       ...options,
     };
     this.riskEngine = new RiskEngine();
+    this.attackAnalyzer = new AttackAnalyzer();
   }
 
   render(findings: Finding[]): void {
     console.log();
+
+    // Generate security verdict first
+    const verdict = this.attackAnalyzer.generateVerdict(findings);
+
     this.renderHeader(findings);
+    this.renderSecurityVerdict(verdict);
     this.renderSeverityBreakdown(findings);
 
     if (findings.length > 0) {
+      // Show endpoint correlation in verbose mode
+      if (this.options.verbose) {
+        this.renderEndpointCorrelation(findings);
+      }
+
       this.renderTopFindings(findings);
 
       if (this.options.verbose) {
-        this.renderCategoryBreakdown(findings);
+        this.renderAttackChains(verdict);
+        this.renderContextualRemediations(verdict);
         this.renderSourceBreakdown(findings);
       }
     }
 
-    this.renderConclusion(findings);
+    this.renderConclusion(verdict);
     console.log();
   }
 
@@ -202,28 +216,168 @@ export class CliSummary {
     console.log();
   }
 
-  private renderConclusion(findings: Finding[]): void {
-    console.log(chalk.bold("─".repeat(60)));
+  private renderSecurityVerdict(verdict: SecurityVerdict): void {
+    console.log(chalk.bold("  SECURITY VERDICT:"));
+    console.log();
 
-    if (findings.length === 0) {
-      console.log(chalk.green("  Status: PASSED - No vulnerabilities detected"));
-    } else {
-      const critical = findings.filter((f) => f.severity === "CRITICAL").length;
-      const high = findings.filter((f) => f.severity === "HIGH").length;
+    switch (verdict.verdict) {
+      case "UNSAFE":
+        console.log(chalk.bgRed.white.bold("  ╔════════════════════════════════════════════════════════╗"));
+        console.log(chalk.bgRed.white.bold("  ║            ⛔  UNSAFE TO DEPLOY  ⛔                    ║"));
+        console.log(chalk.bgRed.white.bold("  ╚════════════════════════════════════════════════════════╝"));
+        break;
+      case "REVIEW_REQUIRED":
+        console.log(chalk.bgYellow.black.bold("  ╔════════════════════════════════════════════════════════╗"));
+        console.log(chalk.bgYellow.black.bold("  ║           ⚠️  REVIEW REQUIRED  ⚠️                      ║"));
+        console.log(chalk.bgYellow.black.bold("  ╚════════════════════════════════════════════════════════╝"));
+        break;
+      case "SAFE":
+        console.log(chalk.bgGreen.white.bold("  ╔════════════════════════════════════════════════════════╗"));
+        console.log(chalk.bgGreen.white.bold("  ║            ✅  SAFE TO DEPLOY  ✅                      ║"));
+        console.log(chalk.bgGreen.white.bold("  ╚════════════════════════════════════════════════════════╝"));
+        break;
+    }
 
-      if (critical > 0) {
-        console.log(chalk.red.bold("  Status: FAILED - Critical vulnerabilities found"));
-        console.log(chalk.red("  Action: Immediate remediation required"));
-      } else if (high > 0) {
-        console.log(chalk.yellow("  Status: WARNING - High severity issues found"));
-        console.log(chalk.yellow("  Action: Address high severity findings promptly"));
-      } else {
-        console.log(chalk.blue("  Status: REVIEW - Non-critical findings detected"));
-        console.log(chalk.blue("  Action: Review and address findings as appropriate"));
+    console.log();
+    console.log(`  ${chalk.white("Reason:")} ${verdict.reason}`);
+
+    if (verdict.confirmedExploits.length > 0) {
+      console.log();
+      console.log(chalk.red.bold(`  ⚡ ${verdict.confirmedExploits.length} CONFIRMED EXPLOITS:`));
+      for (const exploit of verdict.confirmedExploits.slice(0, 3)) {
+        console.log(chalk.red(`     • ${exploit.category} on ${exploit.endpoint || "application"}`));
       }
     }
 
-    console.log(chalk.bold("─".repeat(60)));
+    console.log();
+  }
+
+  private renderEndpointCorrelation(findings: Finding[]): void {
+    const correlations = this.attackAnalyzer.correlateByEndpoint(findings);
+    const topEndpoints = correlations.slice(0, 5);
+
+    if (topEndpoints.length === 0) return;
+
+    console.log(chalk.bold("  Attack Surface (by endpoint):"));
+    console.log();
+
+    for (const corr of topEndpoints) {
+      const riskColor = corr.combinedRisk >= 0.7 ? chalk.red :
+                        corr.combinedRisk >= 0.5 ? chalk.yellow :
+                        chalk.blue;
+      const riskBar = this.renderRiskBar(corr.combinedRisk);
+
+      console.log(`  ${riskColor(corr.endpoint || "no-endpoint")}`);
+      console.log(`     Risk: ${riskBar} ${(corr.combinedRisk * 100).toFixed(0)}%`);
+
+      // List findings for this endpoint
+      const findingTypes = [...new Set(corr.findings.map(f => f.category))];
+      console.log(chalk.gray(`     ├── ${findingTypes.join(", ")}`));
+
+      // Show attack chains if any
+      if (corr.attackChains.length > 0) {
+        const chain = corr.attackChains[0];
+        console.log(chalk.yellow(`     └── Attack chain: ${chain.name}`));
+      }
+
+      console.log();
+    }
+  }
+
+  private renderRiskBar(risk: number): string {
+    const width = 20;
+    const filled = Math.round(risk * width);
+    const empty = width - filled;
+
+    const color = risk >= 0.7 ? chalk.red :
+                  risk >= 0.5 ? chalk.yellow :
+                  risk >= 0.3 ? chalk.blue :
+                  chalk.green;
+
+    return color("█".repeat(filled)) + chalk.gray("░".repeat(empty));
+  }
+
+  private renderAttackChains(verdict: SecurityVerdict): void {
+    if (verdict.attackChains.length === 0) return;
+
+    // Deduplicate chains by name
+    const uniqueChains = new Map<string, typeof verdict.attackChains[0]>();
+    for (const chain of verdict.attackChains) {
+      if (!uniqueChains.has(chain.name)) {
+        uniqueChains.set(chain.name, chain);
+      }
+    }
+
+    console.log(chalk.bold("  Potential Attack Chains:"));
+    console.log();
+
+    for (const chain of uniqueChains.values()) {
+      const impactColor = chain.impact === "critical" ? chalk.red :
+                          chain.impact === "high" ? chalk.yellow :
+                          chalk.blue;
+
+      console.log(`  ${impactColor("→")} ${chain.name}`);
+      console.log(chalk.gray(`     Likelihood: ${chain.likelihood} | Impact: ${chain.impact}`));
+
+      for (let i = 0; i < chain.steps.length; i++) {
+        const prefix = i === chain.steps.length - 1 ? "└──" : "├──";
+        console.log(chalk.gray(`     ${prefix} ${i + 1}. ${chain.steps[i]}`));
+      }
+
+      console.log();
+    }
+  }
+
+  private renderContextualRemediations(verdict: SecurityVerdict): void {
+    const remediations = verdict.recommendations.slice(0, 5);
+    if (remediations.length === 0) return;
+
+    console.log(chalk.bold("  Recommended Fixes:"));
+    console.log();
+
+    for (const rem of remediations) {
+      const priorityColor = rem.priority === "immediate" ? chalk.red :
+                            rem.priority === "high" ? chalk.yellow :
+                            chalk.blue;
+      const priorityIcon = rem.priority === "immediate" ? "🚨" :
+                           rem.priority === "high" ? "⚠️" :
+                           rem.priority === "medium" ? "📋" : "📝";
+
+      console.log(`  ${priorityIcon} ${priorityColor(rem.finding.category)}`);
+      console.log(chalk.gray(`     Endpoint: ${rem.endpoint}`));
+      console.log(chalk.cyan(`     Fix: ${rem.specificFix}`));
+
+      if (rem.codeExample && this.options.verbose) {
+        console.log(chalk.gray("     Example:"));
+        const lines = rem.codeExample.split("\n").slice(0, 3);
+        for (const line of lines) {
+          console.log(chalk.gray(`       ${line}`));
+        }
+      }
+
+      console.log();
+    }
+  }
+
+  private renderConclusion(verdict: SecurityVerdict): void {
+    console.log(chalk.bold("═".repeat(60)));
+
+    switch (verdict.verdict) {
+      case "UNSAFE":
+        console.log(chalk.red.bold("  DEPLOYMENT BLOCKED"));
+        console.log(chalk.red(`  ${verdict.confirmedExploits.length} confirmed exploit(s) must be fixed before deployment.`));
+        break;
+      case "REVIEW_REQUIRED":
+        console.log(chalk.yellow.bold("  DEPLOYMENT REQUIRES REVIEW"));
+        console.log(chalk.yellow(`  ${verdict.criticalFindings.length} finding(s) require security team review.`));
+        break;
+      case "SAFE":
+        console.log(chalk.green.bold("  DEPLOYMENT APPROVED"));
+        console.log(chalk.green("  No significant security issues detected."));
+        break;
+    }
+
+    console.log(chalk.bold("═".repeat(60)));
   }
 
   private getSeverityColor(severity: Severity): (text: string) => string {

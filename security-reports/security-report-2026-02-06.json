@@ -1,15 +1,15 @@
 {
   "metadata": {
-    "generatedAt": "2026-02-06T22:03:46.443Z",
+    "generatedAt": "2026-02-06T22:25:07.396Z",
     "version": "1.0.0",
     "targetUrl": "http://localhost:3000",
-    "scanDuration": 228539
+    "scanDuration": 337383
   },
   "summary": {
-    "total": 13,
+    "total": 16,
     "bySeverity": {
-      "CRITICAL": 1,
-      "HIGH": 6,
+      "CRITICAL": 2,
+      "HIGH": 8,
       "MEDIUM": 1,
       "LOW": 5
     },
@@ -18,13 +18,14 @@
       "Container Vulnerability": 6,
       "Security Misconfiguration": 1,
       "Security Vulnerability": 1,
-      "Cross-Site Scripting (XSS)": 1
+      "SQL Injection": 1,
+      "Broken Access Control": 3
     },
     "deduplicated": 6
   },
   "findings": [
     {
-      "id": "d5d19f18-3de9-44eb-b67f-b98620365aa8",
+      "id": "d57a2647-1e0c-4b99-b4a6-055d244872e4",
       "title": "In netstat in BusyBox through 1.37.0, local users can launch of networ ...",
       "category": "OS Package Vulnerability",
       "severity": "MEDIUM",
@@ -45,7 +46,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2024-58251"
     },
     {
-      "id": "d5cc35e5-3067-42b4-b42d-f23d89c00e0f",
+      "id": "358b5fdb-f678-49f2-b5d6-e462a3c4e441",
       "title": "In tar in BusyBox through 1.37.0, a TAR archive can have filenames hid ...",
       "category": "OS Package Vulnerability",
       "severity": "LOW",
@@ -66,7 +67,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-46394"
     },
     {
-      "id": "82692000-a350-49c7-870e-c1e45ce7ffe6",
+      "id": "6010223a-35fa-469d-bb5d-71ddc1f91322",
       "title": "openssl: OpenSSL: Remote code execution or Denial of Service via oversized Initialization Vector in CMS parsing",
       "category": "OS Package Vulnerability",
       "severity": "CRITICAL",
@@ -87,7 +88,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-15467"
     },
     {
-      "id": "c02e66e7-21bb-4b40-bf8e-5fc2982d17f8",
+      "id": "9190b4c4-6e8b-429f-a33e-fbe6eb6ca70d",
       "title": "openssl: OpenSSL: Arbitrary code execution due to out-of-bounds write in PKCS#12 processing",
       "category": "OS Package Vulnerability",
       "severity": "HIGH",
@@ -108,7 +109,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-69419"
     },
     {
-      "id": "7c418f5e-3f7a-4160-8919-d6d5fd6b1dab",
+      "id": "23d0db45-8520-4e37-9231-aabbde4a0e32",
       "title": "brace-expansion: juliangruber brace-expansion index.js expand redos",
       "category": "Container Vulnerability",
       "severity": "LOW",
@@ -129,7 +130,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-5889"
     },
     {
-      "id": "dd78e389-4da2-46f7-a740-b50a2177f7dd",
+      "id": "1e93d65c-c7bb-4873-bcb1-6e8404926db0",
       "title": "cross-spawn: regular expression denial of service",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -150,7 +151,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2024-21538"
     },
     {
-      "id": "2651ac96-001c-42ff-ac10-f6d21e9eb16c",
+      "id": "a6455bdd-b508-4f73-8758-a78226cacd43",
       "title": "jsdiff: denial of service vulnerability in parsePatch and applyPatch",
       "category": "Container Vulnerability",
       "severity": "LOW",
@@ -171,7 +172,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-24001"
     },
     {
-      "id": "2d585404-4b15-4289-be7a-e153381ea486",
+      "id": "99b2b8c1-f926-4807-bdb6-cf04a0a8d1de",
       "title": "glob: glob: Command Injection Vulnerability via Malicious Filenames",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -192,7 +193,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-64756"
     },
     {
-      "id": "08abd756-b9dd-43ad-a47f-151a5d2f3ba5",
+      "id": "19e4cdfc-f1f9-4ebb-a6b9-a19753fbea9c",
       "title": "npmcli: npm cli Incorrect Permission Assignment Local Privilege Escalation Vulnerability",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -212,7 +213,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-0775"
     },
     {
-      "id": "14b9d5fe-b4f9-4520-adc5-98889e2df1bd",
+      "id": "6947c2f9-f49d-498e-bd84-ca94e80f3dad",
       "title": "node-tar: tar: node-tar: Arbitrary file overwrite and symlink poisoning via unsanitized linkpaths in archives",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -233,7 +234,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-23745"
     },
     {
-      "id": "4b167cec-7a06-44f0-a0cc-bde9cff1060b",
+      "id": "405a05eb-dfd5-4acd-9c42-3f8efd9494db",
       "title": "X-Content-Type-Options Header Missing",
       "category": "Security Misconfiguration",
       "severity": "LOW",
@@ -258,7 +259,7 @@
       "reference": "https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/compatibility/gg622941(v=vs.85)\nhttps://owasp.org/www-community/Security_Headers"
     },
     {
-      "id": "972b9e83-520a-470c-8480-24d72762de32",
+      "id": "cb7db6a7-877a-43e5-afd1-81f48a4c4258",
       "title": "HTTP Only Site",
       "category": "Security Vulnerability",
       "severity": "LOW",
@@ -283,10 +284,10 @@
       "reference": "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html\nhttps://letsencrypt.org/"
     },
     {
-      "id": "de13b749-1307-4101-b066-1512ed2f4d16",
-      "title": "XSS - POST /api/execute: Test for reflected XSS in request body",
-      "category": "Cross-Site Scripting (XSS)",
-      "severity": "HIGH",
+      "id": "e1a3ac69-b1b4-4c51-9f6b-f856934e5740",
+      "title": "Execute command without authentication: Test to see if we can execute a command without providing any credentials",
+      "category": "SQL Injection",
+      "severity": "CRITICAL",
       "endpoint": "POST /api/execute",
       "endpointContext": {
         "method": "POST",
@@ -295,7 +296,79 @@
         "requiresAuth": true,
         "handlesData": true
       },
-      "evidence": "Request: POST /api/execute\nResponse Status: 200\nMatched: Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"status\":\"executed\",\"command\":\"\",\"output\":\"Command execution simulated\"}",
+      "evidence": "Request: POST /api/execute\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"status\":\"executed\",\"command\":\"ls\",\"output\":\"Command execution simulated\"}",
+      "exploitability": 1,
+      "confidence": 1,
+      "riskScore": 1,
+      "sources": [
+        "AI Security Tester"
+      ],
+      "deduplicated": false,
+      "duplicateCount": 0,
+      "reference": "Use parameterized queries or prepared statements. Never concatenate user input into SQL queries."
+    },
+    {
+      "id": "7583c4e3-cf7b-4b5d-940a-3955ec535217",
+      "title": "Debug info without authentication: Test to see if we can get debug information without providing any credentials",
+      "category": "Broken Access Control",
+      "severity": "HIGH",
+      "endpoint": "GET /api/debug",
+      "endpointContext": {
+        "method": "GET",
+        "path": "/api/debug",
+        "acceptsUserInput": false,
+        "requiresAuth": true,
+        "handlesData": false
+      },
+      "evidence": "Request: GET /api/debug\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"env\":{\"NODE_ENV\":\"development\",\"cwd\":\"/app\",\"platform\":\"linux\"},\"users\":[\"admin\",\"user\"],\"activeSessions\":0,\"nodeVersion\":\"v18.20.8\"}",
+      "exploitability": 0.81,
+      "confidence": 1,
+      "riskScore": 0.85,
+      "sources": [
+        "AI Security Tester"
+      ],
+      "deduplicated": false,
+      "duplicateCount": 0,
+      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
+    },
+    {
+      "id": "d6e575cc-7cd0-4935-9a9e-abeb39f05fa1",
+      "title": "Read file without authentication: Test to see if we can read a file without providing any credentials",
+      "category": "Broken Access Control",
+      "severity": "HIGH",
+      "endpoint": "GET /api/file",
+      "endpointContext": {
+        "method": "GET",
+        "path": "/api/file",
+        "acceptsUserInput": false,
+        "requiresAuth": true,
+        "handlesData": true
+      },
+      "evidence": "Request: GET /api/file\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"path\":\"\",\"content\":\"File read simulated\",\"warning\":\"Path traversal vulnerabilities may exist\"}",
+      "exploitability": 0.85,
+      "confidence": 1,
+      "riskScore": 0.87,
+      "sources": [
+        "AI Security Tester"
+      ],
+      "deduplicated": false,
+      "duplicateCount": 0,
+      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
+    },
+    {
+      "id": "7f4949fa-e175-4d96-842a-08969f3d9f95",
+      "title": "Get data by ID without authentication: Test to see if we can get data by an ID without providing any credentials",
+      "category": "Broken Access Control",
+      "severity": "HIGH",
+      "endpoint": "GET /api/data/:id",
+      "endpointContext": {
+        "method": "GET",
+        "path": "/api/data/:id",
+        "acceptsUserInput": true,
+        "requiresAuth": true,
+        "handlesData": true
+      },
+      "evidence": "Request: GET /api/data/123\nResponse Status: 404\nMatched: Body contains \"data\"\nResponse: {\"error\":\"Not found\",\"path\":\"/api/data/123\"}",
       "exploitability": 0.94,
       "confidence": 1,
       "riskScore": 0.9,
@@ -304,7 +377,7 @@
       ],
       "deduplicated": false,
       "duplicateCount": 0,
-      "reference": "Encode all user input before rendering. Use Content-Security-Policy headers."
+      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
     }
   ]
 }

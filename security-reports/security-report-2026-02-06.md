@@ -1,17 +1,44 @@
 # Security Scan Report
 
 **Target:** http://localhost:3000
-**Generated:** 2026-02-06T22:03:46.439Z
-**Duration:** 228.5s
+**Generated:** 2026-02-06T22:25:07.391Z
+**Duration:** 337.4s
+
+## Security Verdict
+
+```
+╔══════════════════════════════════════════════════════════╗
+║              ⛔  UNSAFE TO DEPLOY  ⛔                     ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Reason:** Confirmed exploitation: Security Misconfiguration, Security Vulnerability, SQL Injection. Active attacks succeeded during testing.
+
+### ⚡ Confirmed Exploits
+
+These vulnerabilities were **actively exploited** during testing:
+
+- **Security Misconfiguration** on `GET undefined`
+- **Security Vulnerability** on `POST undefined`
+- **SQL Injection** on `POST /api/execute`
+- **Broken Access Control** on `GET /api/debug`
+- **Broken Access Control** on `GET /api/file`
+- **Broken Access Control** on `GET /api/data/:id`
+
 
 ## Executive Summary
 
-**⚠️ CRITICAL:** 1 critical vulnerability found requiring immediate attention.
-**🔴 HIGH:** 6 high severity issues should be addressed promptly.
+### Is it safe to deploy?
 
-A total of **13** security findings were identified across the scanned components.
+**No.** Active exploitation was successful during testing. This application has confirmed security vulnerabilities that can be exploited by attackers.
 
-**Overall Risk Level:** High (average risk score: 0.64)
+### Key Metrics
+
+- **Total Findings:** 16
+- **Confirmed Exploits:** 6
+- **Critical Findings:** 6
+- **Attack Chains Identified:** 4
+- **AI-Confirmed Vulnerabilities:** 4 (behavioral testing)
 
 ## Findings Summary
 
@@ -19,11 +46,11 @@ A total of **13** security findings were identified across the scanned component
 
 | Severity | Count |
 |----------|-------|
-| 🔴 Critical | 1 |
-| 🟠 High | 6 |
+| 🔴 Critical | 2 |
+| 🟠 High | 8 |
 | 🟡 Medium | 1 |
 | 🟢 Low | 5 |
-| **Total** | **13** |
+| **Total** | **16** |
 
 ### By Category
 
@@ -31,12 +58,38 @@ A total of **13** security findings were identified across the scanned component
 |----------|-------|
 | Container Vulnerability | 6 |
 | OS Package Vulnerability | 4 |
+| Broken Access Control | 3 |
 | Security Misconfiguration | 1 |
 | Security Vulnerability | 1 |
-| Cross-Site Scripting (XSS) | 1 |
+| SQL Injection | 1 |
 
 
 ## Critical Findings
+
+### 🔴 Execute command without authentication: Test to see if we can execute a command without providing any credentials
+
+**Category:** SQL Injection
+**Risk Score:** 1.00 (Exploitability: 1.00, Confidence: 1.00)
+**Endpoint:** `POST /api/execute`
+**Endpoint Risk Factors:** accepts user input, handles sensitive data
+**Sources:** AI Security Tester 🤖
+> *AI-detected: This vulnerability was identified through intelligent security testing that understands endpoint semantics and business logic.*
+
+**Evidence:**
+```
+Request: POST /api/execute
+Response Status: 200
+Matched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security
+Response: {"status":"executed","command":"ls","output":"Command execution simulated"}
+```
+
+**Remediation:** 🚨 Use parameterized queries or prepared statements
+> Never concatenate user input into SQL queries. Use ORM/query builders with automatic escaping. Implement input validation as defense-in-depth.
+> *Effort: moderate*
+
+**Reference:** Use parameterized queries or prepared statements. Never concatenate user input into SQL queries.
+
+---
 
 ### 🔴 openssl: OpenSSL: Remote code execution or Denial of Service via oversized Initialization Vector in CMS parsing
 
@@ -64,28 +117,77 @@ libcrypto3@3.3.3-r0 in demo-vulnerable-api (demo-vulnerable-api (alpine 3.21.3))
 
 ## High Severity Findings
 
-### 🟠 XSS - POST /api/execute: Test for reflected XSS in request body
+### 🟠 Get data by ID without authentication: Test to see if we can get data by an ID without providing any credentials
 
-**Category:** Cross-Site Scripting (XSS)
+**Category:** Broken Access Control
 **Risk Score:** 0.90 (Exploitability: 0.94, Confidence: 1.00)
-**Endpoint:** `POST /api/execute`
+**Endpoint:** `GET /api/data/:id`
 **Endpoint Risk Factors:** accepts user input, handles sensitive data
 **Sources:** AI Security Tester 🤖
 > *AI-detected: This vulnerability was identified through intelligent security testing that understands endpoint semantics and business logic.*
 
 **Evidence:**
 ```
-Request: POST /api/execute
-Response Status: 200
-Matched: Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security
-Response: {"status":"executed","command":"","output":"Command execution simulated"}
+Request: GET /api/data/123
+Response Status: 404
+Matched: Body contains "data"
+Response: {"error":"Not found","path":"/api/data/123"}
 ```
 
-**Remediation:** ⚠️ Encode output and implement Content-Security-Policy
-> Apply context-appropriate encoding. Use CSP headers. Consider auto-escaping template engines.
+**Remediation:** ⚠️ Implement authorization checks at every endpoint
+> Deny by default. Check user permissions server-side for every resource access. Log access control failures.
 > *Effort: moderate*
 
-**Reference:** Encode all user input before rendering. Use Content-Security-Policy headers.
+**Reference:** Implement proper authentication and authorization checks. Use middleware to verify access.
+
+---
+
+### 🟠 Read file without authentication: Test to see if we can read a file without providing any credentials
+
+**Category:** Broken Access Control
+**Risk Score:** 0.87 (Exploitability: 0.85, Confidence: 1.00)
+**Endpoint:** `GET /api/file`
+**Endpoint Risk Factors:** handles sensitive data
+**Sources:** AI Security Tester 🤖
+> *AI-detected: This vulnerability was identified through intelligent security testing that understands endpoint semantics and business logic.*
+
+**Evidence:**
+```
+Request: GET /api/file
+Response Status: 200
+Matched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security
+Response: {"path":"","content":"File read simulated","warning":"Path traversal vulnerabilities may exist"}
+```
+
+**Remediation:** ⚠️ Implement authorization checks at every endpoint
+> Deny by default. Check user permissions server-side for every resource access. Log access control failures.
+> *Effort: moderate*
+
+**Reference:** Implement proper authentication and authorization checks. Use middleware to verify access.
+
+---
+
+### 🟠 Debug info without authentication: Test to see if we can get debug information without providing any credentials
+
+**Category:** Broken Access Control
+**Risk Score:** 0.85 (Exploitability: 0.81, Confidence: 1.00)
+**Endpoint:** `GET /api/debug`
+**Sources:** AI Security Tester 🤖
+> *AI-detected: This vulnerability was identified through intelligent security testing that understands endpoint semantics and business logic.*
+
+**Evidence:**
+```
+Request: GET /api/debug
+Response Status: 200
+Matched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security
+Response: {"env":{"NODE_ENV":"development","cwd":"/app","platform":"linux"},"users":["admin","user"],"activeSessions":0,"nodeVersion":"v18.20.8"}
+```
+
+**Remediation:** ⚠️ Implement authorization checks at every endpoint
+> Deny by default. Check user permissions server-side for every resource access. Log access control failures.
+> *Effort: moderate*
+
+**Reference:** Implement proper authentication and authorization checks. Use middleware to verify access.
 
 ---
 
@@ -340,12 +442,123 @@ busybox-binsh@1.37.0-r12 in demo-vulnerable-api (demo-vulnerable-api (alpine 3.2
 
 ---
 
-## Recommendations
+## Attack Surface Analysis
 
-1. Update vulnerable dependencies to their latest secure versions.
-2. Review and harden security configurations, add missing security headers.
-3. Implement proper output encoding and Content Security Policy headers.
+| Endpoint | Risk | Vulnerabilities | Attack Feasibility |
+|----------|------|-----------------|-------------------|
+| `POST /api/execute` | 🔴 91% | SQL Injection | High |
+| `GET undefined` | 🔴 90% | Security Misconfiguration | High |
+| `POST undefined` | 🔴 90% | Security Vulnerability | High |
+| `GET /api/debug` | 🔴 90% | Broken Access Control | High |
+| `GET /api/file` | 🔴 90% | Broken Access Control | High |
+| `GET /api/data/:id` | 🔴 90% | Broken Access Control | High |
+| `no-endpoint` | 🟢 25% | OS Package Vulnerability, Container Vulnerability | Low |
+
+## Potential Attack Chains
+
+### 🔴 Injection → System Compromise
+
+**Likelihood:** high | **Impact:** critical
+
+**Attack Steps:**
+1. Inject malicious payload
+2. Execute arbitrary commands
+3. Establish persistence/exfiltrate data
+
+### 🟠 IDOR → Data Breach
+
+**Likelihood:** high | **Impact:** high
+
+**Attack Steps:**
+1. Enumerate resource IDs
+2. Access unauthorized resources
+3. Collect sensitive information
+
+
+## Remediation Plan
+
+Prioritized fixes based on attack feasibility:
+
+### 🚨 Security Misconfiguration
+
+**Endpoint:** `GET undefined`
+**Priority:** IMMEDIATE
+
+**Fix:** Review and address Security Misconfiguration on GET undefined.
+
+### 🚨 Security Vulnerability
+
+**Endpoint:** `POST undefined`
+**Priority:** IMMEDIATE
+
+**Fix:** Update affected package to latest secure version.
+
+**Example:**
+```javascript
+npm update affected package
+```
+
+### 🚨 SQL Injection
+
+**Endpoint:** `POST /api/execute`
+**Priority:** IMMEDIATE
+
+**Fix:** Parameterize query on POST /api/execute
+
+**Example:**
+```javascript
+// Instead of:
+db.query(`SELECT * FROM users WHERE id = ${id}`);
+
+// Use:
+db.query('SELECT * FROM users WHERE id = ?', [id]);
+```
+
+### 🚨 Broken Access Control
+
+**Endpoint:** `GET /api/debug`
+**Priority:** IMMEDIATE
+
+**Fix:** Enforce ownership check on GET /api/debug. Verify resource belongs to authenticated user.
+
+**Example:**
+```javascript
+// Add authorization check:
+if (resource.userId !== req.user.id) {
+  return res.status(403).json({ error: 'Forbidden' });
+}
+```
+
+### 🚨 Broken Access Control
+
+**Endpoint:** `GET /api/file`
+**Priority:** IMMEDIATE
+
+**Fix:** Enforce ownership check on GET /api/file. Verify resource belongs to authenticated user.
+
+**Example:**
+```javascript
+// Add authorization check:
+if (resource.userId !== req.user.id) {
+  return res.status(403).json({ error: 'Forbidden' });
+}
+```
+
+### 🚨 Broken Access Control
+
+**Endpoint:** `GET /api/data/:id`
+**Priority:** IMMEDIATE
+
+**Fix:** Enforce ownership check on GET /api/data/:id. Verify resource belongs to authenticated user.
+
+**Example:**
+```javascript
+// Add authorization check:
+if (resource.userId !== req.user.id) {
+  return res.status(403).json({ error: 'Forbidden' });
+}
+```
 
 ---
 
-*Generated by Security Bot*
+*Generated by Security Bot - Attack Feasibility Analyzer*

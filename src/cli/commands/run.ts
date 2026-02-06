@@ -3,7 +3,7 @@ import { ScanOptions, parseSeverity, parseFormats } from "../options";
 import { loadConfig, validateConfig, SecurityBotConfig } from "../../core/config.loader";
 import { logger } from "../../core/logger";
 import { Finding } from "../../findings/finding";
-import { RiskEngine, RISK_THRESHOLDS } from "../../findings/risk.engine";
+import { AttackAnalyzer } from "../../findings/attack.analyzer";
 import { Orchestrator } from "../../orchestrator/orchestrator";
 import { EnvironmentManager } from "../../orchestrator/environment.manager";
 import { ExecutionContext } from "../../orchestrator/context";
@@ -175,17 +175,21 @@ async function runScan(options: ScanOptions): Promise<void> {
     await envManager.teardown();
   }
 
-  // Determine exit code based on risk scores (not just severity)
-  const riskEngine = new RiskEngine();
-  const riskThreshold = RISK_THRESHOLDS.standard;
-  const riskResult = riskEngine.exceedsRiskThreshold(findings, riskThreshold);
+  // Determine exit code based on attack feasibility analysis
+  const attackAnalyzer = new AttackAnalyzer();
+  const verdict = attackAnalyzer.generateVerdict(findings);
 
-  if (riskResult.exceeds) {
-    logger.error(`Scan failed: ${riskResult.reason}`);
-    logger.info(`Found ${riskResult.criticalFindings.length} finding(s) exceeding risk threshold`);
+  if (verdict.verdict === "UNSAFE") {
+    logger.error(`Deployment blocked: ${verdict.reason}`);
+    if (verdict.confirmedExploits.length > 0) {
+      logger.error(`${verdict.confirmedExploits.length} confirmed exploit(s) detected`);
+    }
     process.exit(1);
+  } else if (verdict.verdict === "REVIEW_REQUIRED") {
+    logger.warn(`Review required: ${verdict.reason}`);
+    process.exit(0); // Don't fail, but warn
   } else {
-    logger.info("Scan completed successfully - no high-risk findings detected");
+    logger.info("Security analysis complete - safe to deploy");
     process.exit(0);
   }
 }

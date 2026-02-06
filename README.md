@@ -1,16 +1,82 @@
 # Security Bot
 
-CLI-based automated security analysis tool for REST APIs running in Docker environments. Combines static analysis, container scanning, dynamic API testing, and AI-assisted vulnerability discovery.
+**Attack Feasibility Analyzer** - CLI-based automated security analysis tool for REST APIs. Goes beyond vulnerability detection to answer the key question: **"Is it safe to deploy?"**
+
+Combines static analysis, container scanning, dynamic API testing, and AI-assisted behavioral testing to provide deployment verdicts with contextual remediation.
+
+## What Makes This Different
+
+Most security scanners answer: *"What vulnerabilities exist?"*
+
+Security Bot answers: **"Can an attacker actually compromise the system?"**
+
+| Traditional Scanner | Security Bot |
+|---------------------|--------------|
+| Lists vulnerabilities | Analyzes attack feasibility |
+| Severity-based sorting | Risk = Impact × Exploitability × Reachability × Confidence |
+| Generic recommendations | Contextual remediation with code examples |
+| Pass/fail on severity | **Deployment verdict: SAFE / UNSAFE / REVIEW_REQUIRED** |
 
 ## Features
 
-- **Static Analysis** - Scan source code for vulnerabilities using Trivy
-- **Container Scanning** - Detect vulnerabilities in Docker images
-- **Dynamic API Testing** - Active scanning with OWASP ZAP
-- **AI-Assisted Testing** - LLM-powered security test generation
-- **Smart Deduplication** - Consolidate duplicate findings across scanners
-- **Risk Scoring** - Prioritize findings by exploitability and confidence
-- **Multiple Report Formats** - Markdown and JSON reports with CLI summary
+- **Attack Feasibility Analysis** - Multiplicative risk scoring: reachability × exploitability × impact × confidence
+- **Deployment Verdicts** - Clear SAFE/UNSAFE/REVIEW_REQUIRED decisions with reasons
+- **Attack Chain Detection** - Identifies multi-step attack paths (e.g., Auth Bypass → Data Exfiltration)
+- **Confirmed Exploit Tracking** - AI/dynamic testing success = auto-critical priority
+- **Endpoint Correlation** - Groups findings by attack surface area
+- **Contextual Remediation** - Specific fixes with code examples, not generic advice
+- **Multi-Scanner Integration** - Trivy (SAST), ZAP (DAST), Container scanning, AI behavioral testing
+
+## Quick Start
+
+```bash
+# Install
+npm install
+npm run build
+
+# Start demo vulnerable API
+npm run demo
+
+# Run attack feasibility analysis
+npm run scan -- -t http://localhost:3000 -v
+```
+
+## Sample Output
+
+```
+═══════════════════════════════════════════════════════════
+                    SCAN RESULTS
+═══════════════════════════════════════════════════════════
+
+  SECURITY VERDICT:
+
+  ╔════════════════════════════════════════════════════════╗
+  ║            ⛔  UNSAFE TO DEPLOY  ⛔                    ║
+  ╚════════════════════════════════════════════════════════╝
+
+  Reason: Confirmed exploitation: SQL Injection, Command Injection. Active attacks succeeded during testing.
+
+  ⚡ 2 CONFIRMED EXPLOITS:
+     • SQL Injection on POST /api/data
+     • Command Injection on POST /api/execute
+
+  Attack Surface (by endpoint):
+
+  POST /api/execute
+     Risk: ████████████████████ 95%
+     ├── Command Injection
+     └── Attack chain: Command Injection → Full System Compromise
+
+  POST /api/data
+     Risk: ██████████████████░░ 90%
+     ├── SQL Injection
+     └── Attack chain: Injection → System Compromise
+
+═══════════════════════════════════════════════════════════
+  DEPLOYMENT BLOCKED
+  2 confirmed exploit(s) must be fixed before deployment.
+═══════════════════════════════════════════════════════════
+```
 
 ## Prerequisites
 
@@ -23,10 +89,10 @@ CLI-based automated security analysis tool for REST APIs running in Docker envir
 
 | Tool | Purpose | Installation |
 |------|---------|--------------|
-| **Docker** | Container scanning, environment management | [docker.com](https://www.docker.com/get-started) |
+| **Docker** | Container scanning, ZAP/Trivy via containers | [docker.com](https://www.docker.com/get-started) |
 | **Trivy** | Static analysis & container vulnerability scanning | [trivy docs](https://aquasecurity.github.io/trivy/latest/getting-started/installation/) |
 | **OWASP ZAP** | Dynamic API security testing | [zaproxy.org](https://www.zaproxy.org/download/) |
-| **Ollama** | Local LLM for AI-assisted testing | [ollama.ai](https://ollama.ai/) |
+| **Ollama** | Local LLM for AI-assisted behavioral testing | [ollama.ai](https://ollama.ai/) |
 
 ### Installing Prerequisites
 
@@ -83,7 +149,7 @@ npx tsx src/cli/index.ts scan [options]
 
 #### `scan`
 
-Run security scans against a target API.
+Run attack feasibility analysis against a target API.
 
 ```bash
 sec-bot scan [options]
@@ -97,52 +163,117 @@ sec-bot scan [options]
 | `-t, --target <url>` | Target URL (overrides config) |
 | `-o, --output <dir>` | Output directory for reports |
 | `-f, --format <formats>` | Output formats, comma-separated: `markdown`, `json` |
-| `--fail-on <severity>` | Fail if findings at this severity or above: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
-| `-v, --verbose` | Enable debug output |
+| `--fail-on <severity>` | Legacy: fail on severity (now uses attack feasibility) |
+| `-v, --verbose` | Enable verbose output with attack chains and remediations |
 | `-q, --quiet` | Suppress non-essential output |
 | `--skip-static` | Skip static analysis |
 | `--skip-container` | Skip container scanning |
 | `--skip-dynamic` | Skip dynamic API scanning |
-| `--skip-ai` | Skip AI-assisted testing |
-| `-h, --help` | Display help |
-
-### Global Options
-
-| Option | Description |
-|--------|-------------|
-| `-V, --version` | Output version number |
-| `--no-color` | Disable colored output |
+| `--skip-ai` | Skip AI-assisted behavioral testing |
 | `-h, --help` | Display help |
 
 ### Examples
 
 ```bash
-# Scan a running API
-sec-bot scan -t http://localhost:3000
+# Full attack feasibility analysis
+sec-bot scan -t http://localhost:3000 -v
 
-# Scan with verbose output, fail on HIGH or above
-sec-bot scan -t http://localhost:3000 -v --fail-on HIGH
+# Quick scan (static + container only)
+sec-bot scan -t http://localhost:3000 --skip-dynamic --skip-ai
 
-# Scan using a custom config file
-sec-bot scan -c ./my-config.yml
+# AI-focused testing
+sec-bot scan -t http://localhost:3000 --skip-static --skip-container -v
 
-# Skip container and AI scanning
-sec-bot scan -t http://localhost:3000 --skip-container --skip-ai
-
-# Output only JSON report
-sec-bot scan -t http://localhost:3000 -f json -o ./reports
-
-# Run only static analysis
-sec-bot scan --skip-container --skip-dynamic --skip-ai
+# Output reports for CI/CD integration
+sec-bot scan -t http://localhost:3000 -f json,markdown -o ./reports
 ```
 
 ### Exit Codes
 
 | Code | Description |
 |------|-------------|
-| `0` | Scan completed, no findings at or above threshold |
-| `1` | Findings detected at or above the `--fail-on` threshold |
+| `0` | SAFE or REVIEW_REQUIRED - no confirmed exploits |
+| `1` | UNSAFE - confirmed exploits detected, deployment blocked |
 | `2` | Configuration error |
+
+## How Attack Feasibility Works
+
+Traditional scanners use simple severity (LOW/MEDIUM/HIGH/CRITICAL). Security Bot uses **multiplicative risk scoring**:
+
+```
+risk = impact × exploitability × reachability × confidence
+```
+
+### Risk Factors
+
+| Factor | Description | Sources |
+|--------|-------------|---------|
+| **Reachability** | Can attacker access this? | Endpoint analysis, auth requirements |
+| **Exploitability** | Is exploit demonstrated? | AI success, ZAP active scan, CVE data |
+| **Impact** | What damage is possible? | Category mapping (RCE=1.0, XSS=0.75, etc.) |
+| **Confidence** | How strong is evidence? | Source type, evidence quality, deduplication |
+
+### Confirmed Exploits
+
+When AI or dynamic testing **successfully exploits** a vulnerability:
+- Automatically marked as confirmed
+- Minimum feasibility score of 0.8
+- Verdict becomes UNSAFE
+- Prioritized for immediate remediation
+
+## Reports
+
+### Security Verdict
+
+Every report leads with the deployment decision:
+
+```markdown
+## Security Verdict
+
+╔══════════════════════════════════════════════════════════╗
+║              ⛔  UNSAFE TO DEPLOY  ⛔                     ║
+╚══════════════════════════════════════════════════════════╝
+
+**Reason:** Confirmed exploitation: SQL Injection, Command Injection.
+
+### ⚡ Confirmed Exploits
+
+These vulnerabilities were **actively exploited** during testing:
+
+- **SQL Injection** on `POST /api/data`
+- **Command Injection** on `POST /api/execute`
+```
+
+### Attack Surface Analysis
+
+```markdown
+| Endpoint | Risk | Vulnerabilities | Attack Feasibility |
+|----------|------|-----------------|-------------------|
+| `POST /api/execute` | 🔴 95% | Command Injection | High |
+| `POST /api/data` | 🔴 90% | SQL Injection | High |
+| `GET /api/users/:id` | 🟠 65% | Broken Access Control | Medium |
+```
+
+### Contextual Remediation
+
+Instead of generic advice, you get specific fixes:
+
+```markdown
+### 🚨 SQL Injection
+
+**Endpoint:** `POST /api/data`
+**Priority:** IMMEDIATE
+
+**Fix:** Parameterize query on POST /api/data for parameter 'id'
+
+**Example:**
+```javascript
+// Instead of:
+db.query(`SELECT * FROM users WHERE id = ${id}`);
+
+// Use:
+db.query('SELECT * FROM users WHERE id = ?', [id]);
+```
 
 ## Configuration
 
@@ -152,34 +283,36 @@ Create a `security.config.yml` file in your project root:
 version: "1.0"
 
 target:
-  dockerCompose: ./docker-compose.yml
-  # Or target a running API directly:
-  # baseUrl: http://localhost:3000
-  # openApiSpec: ./openapi.yaml
+  baseUrl: http://localhost:3000
   healthEndpoint: /health
-  healthTimeout: 60000
+
+  # Endpoints for AI testing (if no OpenAPI spec)
+  endpoints:
+    - path: /api/login
+      method: POST
+      body:
+        username: test
+        password: test
+    - path: /api/users
+      method: GET
+      params:
+        id: "1"
 
 auth:
   type: none
   # type: jwt
   # token: ${JWT_TOKEN}
-  # type: apikey
-  # apiKey: ${API_KEY}
-  # headerName: X-API-Key
 
 scanners:
   static:
     enabled: true
     trivy:
       severityThreshold: MEDIUM
-      ignoreUnfixed: false
 
   container:
     enabled: true
     images:
       - my-app:latest
-    trivy:
-      severityThreshold: HIGH
 
   dynamic:
     enabled: true
@@ -190,8 +323,9 @@ scanners:
   ai:
     enabled: true
     provider: ollama
-    model: llama3
-    maxTests: 20
+    model: llama3:8b
+    baseUrl: http://localhost:11434
+    maxTests: 15
 
 thresholds:
   failOn: HIGH
@@ -205,129 +339,64 @@ reporting:
   includeEvidence: true
 ```
 
-## AI-Assisted Testing
+## AI-Assisted Behavioral Testing
 
-Security Bot can use LLMs to generate intelligent security test cases that go beyond traditional scanners.
+The AI scanner is the **key differentiator**. It:
+- Understands endpoint semantics and business logic
+- Generates context-aware attack payloads
+- Confirms exploitation with actual requests
+- Provides high-confidence findings
 
-### Supported Providers
+### Why AI Findings Matter More
 
-| Provider | Configuration | Notes |
-|----------|--------------|-------|
-| **Ollama** (Local) | `provider: ollama` | Free, runs locally, privacy-friendly |
-| **OpenAI** | `provider: openai` | Requires API key, cloud-based |
-| **Anthropic** | `provider: anthropic` | Requires API key, cloud-based |
+| Source | Confidence | Why |
+|--------|------------|-----|
+| Static (Trivy) | Medium | Theoretical - pattern matching |
+| Dynamic (ZAP) | High | Active testing, but generic |
+| **AI Tester** | Very High | Context-aware behavioral testing |
 
-### Recommended Models for Ollama
+When AI successfully exploits a vulnerability, it's a **confirmed attack path**.
 
-For security testing, you need models with good reasoning capabilities and knowledge of security concepts. Here are recommendations based on your hardware:
+### Recommended Models
 
-#### High-End Systems (32GB+ RAM, GPU)
-
-| Model | Size | Command | Best For |
-|-------|------|---------|----------|
-| **llama3:70b** | ~40GB | `ollama pull llama3:70b` | Best accuracy, comprehensive testing |
-| **codellama:34b** | ~20GB | `ollama pull codellama:34b` | Code-focused security analysis |
-| **mixtral:8x7b** | ~26GB | `ollama pull mixtral:8x7b` | Fast, good reasoning |
-
-#### Mid-Range Systems (16GB RAM)
-
-| Model | Size | Command | Best For |
-|-------|------|---------|----------|
-| **llama3:8b** | ~4.7GB | `ollama pull llama3` | Recommended default |
-| **codellama:13b** | ~7GB | `ollama pull codellama:13b` | Good code understanding |
-| **mistral:7b** | ~4GB | `ollama pull mistral` | Fast, efficient |
-
-#### Low-End Systems (8GB RAM)
-
-| Model | Size | Command | Best For |
-|-------|------|---------|----------|
-| **llama3:8b-q4** | ~4GB | `ollama pull llama3:8b-q4_0` | Quantized, lower memory |
-| **phi3:mini** | ~2GB | `ollama pull phi3:mini` | Very fast, basic testing |
-| **gemma:2b** | ~1.5GB | `ollama pull gemma:2b` | Minimal resources |
-
-### Model Selection Tips
-
-1. **For Injection Testing**: Use models with strong code understanding like `codellama` or `llama3`
-2. **For Business Logic**: Larger models (13B+) reason better about complex scenarios
-3. **For Speed**: Quantized models (q4, q5) run faster with minimal accuracy loss
-4. **For Accuracy**: Full-precision larger models produce better results
-
-### Configuration Examples
-
-**Local Ollama (Recommended for privacy):**
-```yaml
-scanners:
-  ai:
-    enabled: true
-    provider: ollama
-    model: llama3
-    baseUrl: http://localhost:11434
-    maxTests: 20
-```
-
-**OpenAI:**
-```yaml
-scanners:
-  ai:
-    enabled: true
-    provider: openai
-    model: gpt-4
-    # Set OPENAI_API_KEY environment variable
-    maxTests: 20
-```
-
-**Anthropic:**
-```yaml
-scanners:
-  ai:
-    enabled: true
-    provider: anthropic
-    model: claude-3-sonnet-20240229
-    # Set ANTHROPIC_API_KEY environment variable
-    maxTests: 20
-```
+| System | Model | Command |
+|--------|-------|---------|
+| 16GB+ RAM | llama3:8b | `ollama pull llama3` |
+| 8GB RAM | llama3:8b-q4 | `ollama pull llama3:8b-q4_0` |
+| GPU available | codellama:13b | `ollama pull codellama:13b` |
 
 ### Starting Ollama
 
-Before running AI-assisted scans with Ollama:
-
 ```bash
-# Start Ollama server
+# Start server
 ollama serve
 
-# In another terminal, pull your chosen model
+# Pull model
 ollama pull llama3
 
-# Verify it's running
+# Verify
 curl http://localhost:11434/api/tags
 ```
 
 ## Demo
 
-A vulnerable demo API is included for testing:
+A vulnerable demo API is included:
 
 ```bash
-# Start the vulnerable demo API
+# Start demo API (intentionally vulnerable)
 npm run demo
 
-# In another terminal, run a scan against it
+# Run full analysis
 npm run scan -- -t http://localhost:3000 -v
 ```
 
-The demo API includes intentional vulnerabilities:
-- SQL Injection simulation
-- Cross-Site Scripting (XSS)
-- Insecure Direct Object References (IDOR)
-- Command Injection simulation
+Demo vulnerabilities:
+- SQL Injection
+- Command Injection
+- Path Traversal
+- IDOR (Broken Access Control)
 - Information Disclosure
 - Missing Security Headers
-- Path Traversal simulation
-
-## Running Tests
-
-```bash
-npm test
-```
 
 ## Project Structure
 
@@ -338,42 +407,58 @@ sec-bot/
 │   ├── core/          # Config loader, logger, process runner
 │   ├── orchestrator/  # Scan orchestration, environment management
 │   ├── scanners/      # Scanner implementations (Trivy, ZAP, AI)
-│   ├── findings/      # Finding normalization, deduplication, risk scoring
-│   ├── reports/       # Report generators (JSON, Markdown, CLI)
-│   └── ai/            # LLM integration, test generation
-├── demo/              # Vulnerable demo API for testing
-├── test/              # Integration tests
+│   ├── findings/      # Attack analysis, risk scoring, remediation
+│   │   ├── attack.analyzer.ts  # Attack feasibility analysis
+│   │   ├── risk.engine.ts      # Risk scoring
+│   │   └── normalizer.ts       # Finding normalization
+│   ├── reports/       # Report generators with verdict
+│   └── ai/            # LLM integration, behavioral testing
+├── demo/              # Vulnerable demo API
 └── security.config.yml
+```
+
+## CI/CD Integration
+
+```yaml
+# GitHub Actions example
+- name: Security Analysis
+  run: npm run scan -- -t ${{ env.API_URL }} -f json -o ./reports
+
+- name: Check Verdict
+  run: |
+    if [ $? -eq 1 ]; then
+      echo "::error::Deployment blocked - confirmed exploits detected"
+      exit 1
+    fi
 ```
 
 ## Troubleshooting
 
 ### "Trivy not found"
-Install Trivy or skip static/container scanning:
+Security Bot can use Trivy via Docker. Ensure Docker is running, or:
 ```bash
 sec-bot scan --skip-static --skip-container
 ```
 
 ### "ZAP not found"
-Install OWASP ZAP or skip dynamic scanning:
+Security Bot can use ZAP via Docker (`ghcr.io/zaproxy/zaproxy`). Or:
 ```bash
 sec-bot scan --skip-dynamic
 ```
 
 ### "Ollama connection refused"
-Ensure Ollama is running:
 ```bash
-ollama serve
+ollama serve  # Start the server first
 ```
-Or skip AI scanning:
+Or skip AI testing:
 ```bash
 sec-bot scan --skip-ai
 ```
 
-### "Docker not running"
-Start Docker Desktop or skip container scanning:
+### Low-confidence findings
+Run with AI enabled - it provides the highest confidence through behavioral testing:
 ```bash
-sec-bot scan --skip-container
+sec-bot scan -t http://localhost:3000 -v
 ```
 
 ## License
