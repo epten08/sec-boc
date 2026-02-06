@@ -1,0 +1,93 @@
+version: "1.0"
+
+target:
+  # Path to docker-compose file (used to start/stop the target)
+  # dockerCompose: ./docker-compose.yml
+  # Or specify a running API directly
+  baseUrl: http://localhost:3000
+  healthEndpoint: /health
+  # Path to OpenAPI spec (optional, improves dynamic scan accuracy)
+  # openApiSpec: ./openapi.yaml
+
+  # Endpoints to test (used by AI scanner if no OpenAPI spec)
+  endpoints:
+    - path: /api/login
+      method: POST
+      description: Login endpoint
+      body:
+        username: test
+        password: test
+    - path: /api/users
+      method: GET
+      description: Get user info
+      params:
+        id: admin
+    - path: /api/search
+      method: GET
+      description: Search with query param
+      params:
+        q: test
+    - path: /api/execute
+      method: POST
+      description: Execute command
+      body:
+        command: "echo hello"
+    - path: /api/debug
+      method: GET
+      description: Debug info endpoint
+    - path: /api/file
+      method: GET
+      description: Read file
+      params:
+        path: /etc/passwd
+    - path: /api/data
+      method: GET
+      description: Get data by ID
+      params:
+        id: "1"
+
+auth:
+  type: none
+  # type: jwt
+  # token: ${JWT_TOKEN}
+  # type: apikey
+  # apiKey: ${API_KEY}
+  # headerName: X-API-Key
+
+scanners:
+  static:
+    enabled: true
+    trivy:
+      severityThreshold: MEDIUM
+      ignoreUnfixed: false
+
+  container:
+    enabled: true
+    images: [demo-vulnerable-api] # Auto-detected from docker-compose if not specified
+    trivy:
+      severityThreshold: MEDIUM
+      ignoreUnfixed: false
+
+  dynamic:
+    enabled: true
+    zap:
+      apiScanType: api
+      maxDuration: 300 # seconds
+
+  ai:
+    enabled: true
+    provider: ollama
+    model: llama3:8b
+    baseUrl: http://localhost:11434
+    maxTests: 15
+
+thresholds:
+  failOn: HIGH      # Exit with error if findings at this level or above
+  warnOn: MEDIUM    # Show warnings for findings at this level
+
+reporting:
+  outputDir: ./security-reports
+  formats:
+    - markdown
+    - json
+  includeEvidence: true

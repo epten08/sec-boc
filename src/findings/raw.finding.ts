@@ -5,4 +5,10 @@ export interface RawFinding {
   endpoint?: string;
   severityHint?: string;
   evidence?: string;
+  cve?: string;
+  cwe?: string;
+  package?: string;
+  version?: string;
+  fixedVersion?: string;
+  reference?: string;
 }

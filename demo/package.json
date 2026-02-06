@@ -1,0 +1,15 @@
+{
+  "name": "vulnerable-demo-api",
+  "version": "1.0.0",
+  "description": "Intentionally vulnerable API for security testing",
+  "main": "dist/vulnerable-api.js",
+  "scripts": {
+    "start": "node dist/vulnerable-api.js",
+    "dev": "npx tsx vulnerable-api.ts",
+    "build": "npx tsc vulnerable-api.ts --outDir dist --esModuleInterop --module commonjs --target ES2020 --lib ES2020 --moduleResolution node --skipLibCheck"
+  },
+  "dependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

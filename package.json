@@ -1,17 +1,36 @@
 {
   "name": "sec-bot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "type":"module",
+  "description": "CLI-based automated security analysis tool",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "sec-bot": "./dist/cli/index.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/cli/index.ts",
+    "dev": "tsx src/cli/index.ts",
+    "scan": "tsx src/cli/index.ts scan",
+    "test": "tsx test/integration.test.ts",
+    "demo": "tsx demo/vulnerable-api.ts"
   },
   "author": "epten08",
   "license": "MIT",
   "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "openapi3-ts": "^4.5.0",
-    "uuid": "^13.0.0"
+    "typescript": "^5.9.3",
+    "uuid": "^13.0.0",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "tsx": "^4.21.0"
   }
 }

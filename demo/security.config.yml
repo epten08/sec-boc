@@ -1,0 +1,83 @@
+# Security Bot Configuration for Demo Vulnerable API
+# This config demonstrates scanning the intentionally vulnerable API
+
+target:
+  # Option 1: Use docker-compose to spin up the API
+  dockerCompose: "./docker-compose.yml"
+  healthEndpoint: "/health"
+  healthTimeout: 60000
+
+  # Option 2: Target a running instance directly
+  # baseUrl: "http://localhost:3000"
+
+  # API endpoints to scan
+  endpoints:
+    - path: "/api/login"
+      method: "POST"
+      body:
+        username: "test"
+        password: "test"
+    - path: "/api/users"
+      method: "GET"
+      params:
+        id: "admin"
+    - path: "/api/search"
+      method: "GET"
+      params:
+        q: "test"
+    - path: "/api/execute"
+      method: "POST"
+      body:
+        command: "echo hello"
+    - path: "/api/debug"
+      method: "GET"
+    - path: "/api/file"
+      method: "GET"
+      params:
+        path: "/etc/passwd"
+    - path: "/api/data"
+      method: "GET"
+      params:
+        id: "1"
+
+scanners:
+  static:
+    enabled: true
+    tool: "trivy"
+    paths:
+      - "."
+
+  container:
+    enabled: true
+    tool: "trivy"
+    images:
+      - "vulnerable-demo-api:latest"
+
+  dynamic:
+    enabled: true
+    tool: "zap"
+    scanType: "api"
+    maxDuration: 300
+
+  ai:
+    enabled: true
+    provider: "ollama"
+    model: "llama3"
+    maxTests: 20
+    categories:
+      - "injection"
+      - "authentication"
+      - "authorization"
+      - "xss"
+      - "idor"
+
+thresholds:
+  failOn: "HIGH"
+  maxFindings: 100
+
+reporting:
+  formats:
+    - "markdown"
+    - "json"
+  outputDir: "./reports"
+  includeEvidence: true
