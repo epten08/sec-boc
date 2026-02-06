@@ -142,10 +142,25 @@ export class MarkdownReporter {
     }
 
     lines.push("");
-    lines.push(`**Reason:** ${verdict.reason}`);
-    lines.push("");
 
-    if (verdict.confirmedExploits.length > 0) {
+    // Show operational conclusion for breaches
+    if (verdict.breaches && verdict.breaches.length > 0) {
+      lines.push(`**BREACH CONFIRMED:** ${verdict.operationalConclusion}`);
+      lines.push("");
+      lines.push("### ⚡ Attacker Capabilities");
+      lines.push("");
+      lines.push("The following attack capabilities were **proven** during testing:");
+      lines.push("");
+      for (const breach of verdict.breaches) {
+        lines.push(`- **${breach.capability}**`);
+      }
+      lines.push("");
+    } else {
+      lines.push(`**Reason:** ${verdict.reason}`);
+      lines.push("");
+    }
+
+    if (verdict.confirmedExploits.length > 0 && (!verdict.breaches || verdict.breaches.length === 0)) {
       lines.push("### ⚡ Confirmed Exploits");
       lines.push("");
       lines.push("These vulnerabilities were **actively exploited** during testing:");
@@ -257,7 +272,11 @@ export class MarkdownReporter {
 
     switch (verdict.verdict) {
       case "UNSAFE":
-        lines.push("**No.** Active exploitation was successful during testing. This application has confirmed security vulnerabilities that can be exploited by attackers.");
+        if (verdict.breaches && verdict.breaches.length > 0) {
+          lines.push(`**No.** ${verdict.operationalConclusion}. This is a confirmed breach condition - an attacker can compromise the system.`);
+        } else {
+          lines.push("**No.** Active exploitation was successful during testing. This application has confirmed security vulnerabilities that can be exploited by attackers.");
+        }
         break;
       case "REVIEW_REQUIRED":
         lines.push("**Not yet.** Significant security findings require review before deployment. While no active exploitation was confirmed, the risk profile requires security team sign-off.");

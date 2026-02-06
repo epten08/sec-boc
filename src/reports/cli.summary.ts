@@ -239,17 +239,20 @@ export class CliSummary {
     }
 
     console.log();
-    console.log(`  ${chalk.white("Reason:")} ${verdict.reason}`);
 
-    if (verdict.confirmedExploits.length > 0) {
+    // Show operational conclusion prominently for breaches
+    if (verdict.breaches && verdict.breaches.length > 0) {
+      console.log(chalk.red.bold(`  BREACH CONFIRMED: ${verdict.operationalConclusion}`));
       console.log();
-      console.log(chalk.red.bold(`  ⚡ ${verdict.confirmedExploits.length} CONFIRMED EXPLOITS:`));
-      for (const exploit of verdict.confirmedExploits.slice(0, 3)) {
-        console.log(chalk.red(`     • ${exploit.category} on ${exploit.endpoint || "application"}`));
+      console.log(chalk.red(`  Attacker Capabilities:`));
+      for (const breach of verdict.breaches.slice(0, 5)) {
+        console.log(chalk.red(`     • ${breach.capability}`));
       }
+      console.log();
+    } else {
+      console.log(`  ${chalk.white("Assessment:")} ${verdict.reason}`);
+      console.log();
     }
-
-    console.log();
   }
 
   private renderEndpointCorrelation(findings: Finding[]): void {
@@ -365,15 +368,19 @@ export class CliSummary {
     switch (verdict.verdict) {
       case "UNSAFE":
         console.log(chalk.red.bold("  DEPLOYMENT BLOCKED"));
-        console.log(chalk.red(`  ${verdict.confirmedExploits.length} confirmed exploit(s) must be fixed before deployment.`));
+        if (verdict.breaches && verdict.breaches.length > 0) {
+          console.log(chalk.red(`  ${verdict.operationalConclusion}`));
+        } else {
+          console.log(chalk.red(`  Critical vulnerabilities require remediation.`));
+        }
         break;
       case "REVIEW_REQUIRED":
         console.log(chalk.yellow.bold("  DEPLOYMENT REQUIRES REVIEW"));
-        console.log(chalk.yellow(`  ${verdict.criticalFindings.length} finding(s) require security team review.`));
+        console.log(chalk.yellow(`  ${verdict.criticalFindings.length} exploitable finding(s) need security review.`));
         break;
       case "SAFE":
         console.log(chalk.green.bold("  DEPLOYMENT APPROVED"));
-        console.log(chalk.green("  No significant security issues detected."));
+        console.log(chalk.green("  No exploitable vulnerabilities detected."));
         break;
     }
 

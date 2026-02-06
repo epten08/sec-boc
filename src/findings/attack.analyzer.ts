@@ -3,8 +3,28 @@ import { Finding, EndpointContext } from "./finding";
 // =============================================================================
 // Attack Feasibility Analysis
 // =============================================================================
-// Transforms vulnerability detection into attack feasibility analysis by
-// evaluating: Reachability × Exploitability × Impact × Confidence
+// This module determines whether an attacker can ACTUALLY compromise the system.
+// Key distinction:
+// - Vulnerability = theoretical weakness (from static analysis, CVE databases)
+// - Confirmed Exploit = PROVEN breach capability (AI/dynamic testing succeeded)
+//
+// A confirmed exploit is not a "high-scoring finding" - it's proof of breach.
+// The system should fail immediately when exploitation is demonstrated.
+
+export type BreachType =
+  | "remote_code_execution"  // Attacker can execute arbitrary code
+  | "data_exfiltration"      // Attacker can steal sensitive data
+  | "privilege_escalation"   // Attacker can gain elevated access
+  | "authentication_bypass"  // Attacker can bypass auth entirely
+  | "none";                  // No confirmed breach
+
+export interface ConfirmedBreach {
+  type: BreachType;
+  endpoint: string;
+  capability: string;        // Human-readable: "Unauthenticated remote command execution"
+  finding: Finding;
+  evidence: string;
+}
 
 export interface AttackVector {
   endpoint: string;
@@ -40,8 +60,10 @@ export type DeploymentVerdict = "SAFE" | "UNSAFE" | "REVIEW_REQUIRED";
 export interface SecurityVerdict {
   verdict: DeploymentVerdict;
   reason: string;
-  criticalFindings: Finding[];
-  confirmedExploits: Finding[];
+  breaches: ConfirmedBreach[];           // Proven attack capabilities
+  operationalConclusion: string;         // E.g., "Unauthenticated RCE is possible"
+  criticalFindings: Finding[];           // High-risk but unconfirmed
+  confirmedExploits: Finding[];          // Backward compat - findings that were exploited
   attackChains: AttackChain[];
   recommendations: ContextualRemediation[];
 }
@@ -444,58 +466,182 @@ export class AttackAnalyzer {
   }
 
   /**
-   * Generate deployment verdict - the key decision
+   * Analyze confirmed breaches - not vulnerabilities, but proven attack capabilities
+   */
+  private analyzeBreaches(findings: Finding[]): ConfirmedBreach[] {
+    const breaches: ConfirmedBreach[] = [];
+
+    for (const finding of findings) {
+      if (!this.isExploitConfirmed(finding)) continue;
+
+      const breach = this.classifyBreach(finding);
+      if (breach.type !== "none") {
+        breaches.push(breach);
+      }
+    }
+
+    return breaches;
+  }
+
+  /**
+   * Classify a confirmed exploit into a breach type with operational meaning
+   */
+  private classifyBreach(finding: Finding): ConfirmedBreach {
+    const category = finding.category.toLowerCase();
+    const endpoint = finding.endpoint || "application";
+    const ctx = finding.endpointContext;
+    const isUnauthenticated = !ctx?.requiresAuth;
+    const authPrefix = isUnauthenticated ? "Unauthenticated " : "";
+
+    // Command Injection / RCE
+    if (category.includes("command") || category.includes("rce") || category.includes("execute")) {
+      return {
+        type: "remote_code_execution",
+        endpoint,
+        capability: `${authPrefix}remote command execution on ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    // SQL Injection
+    if (category.includes("sql") || category.includes("injection")) {
+      return {
+        type: "data_exfiltration",
+        endpoint,
+        capability: `${authPrefix}database access via SQL injection on ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    // Path Traversal / File Read
+    if (category.includes("path") || category.includes("traversal") || category.includes("file")) {
+      return {
+        type: "data_exfiltration",
+        endpoint,
+        capability: `${authPrefix}arbitrary file read via ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    // Authentication Bypass
+    if (category.includes("auth") && (category.includes("bypass") || category.includes("broken"))) {
+      return {
+        type: "authentication_bypass",
+        endpoint,
+        capability: `Authentication bypass on ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    // Access Control / IDOR
+    if (category.includes("access") || category.includes("idor")) {
+      return {
+        type: "privilege_escalation",
+        endpoint,
+        capability: `Unauthorized data access via ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    // Sensitive Data Exposure (if confirmed by dynamic testing)
+    if (category.includes("sensitive") || category.includes("exposure") || category.includes("disclosure")) {
+      return {
+        type: "data_exfiltration",
+        endpoint,
+        capability: `Sensitive data leak from ${endpoint}`,
+        finding,
+        evidence: finding.evidence,
+      };
+    }
+
+    return { type: "none", endpoint, capability: "", finding, evidence: "" };
+  }
+
+  /**
+   * Generate deployment verdict - based on attacker capability, not vulnerability counts
    */
   generateVerdict(findings: Finding[]): SecurityVerdict {
     const correlations = this.correlateByEndpoint(findings);
 
-    // Find confirmed exploits (AI/dynamic testing succeeded)
+    // STEP 1: Identify confirmed breaches (proof of attack success)
+    const breaches = this.analyzeBreaches(findings);
     const confirmedExploits = findings.filter(f => this.isExploitConfirmed(f));
 
-    // Find critical findings (high impact + exploitable)
+    // STEP 2: Determine operational conclusion
+    let operationalConclusion = "";
+    if (breaches.length > 0) {
+      // Prioritize by severity
+      const rce = breaches.find(b => b.type === "remote_code_execution");
+      const dataLeak = breaches.find(b => b.type === "data_exfiltration");
+      const authBypass = breaches.find(b => b.type === "authentication_bypass");
+      const privEsc = breaches.find(b => b.type === "privilege_escalation");
+
+      if (rce) {
+        operationalConclusion = rce.capability;
+      } else if (dataLeak) {
+        operationalConclusion = dataLeak.capability;
+      } else if (authBypass) {
+        operationalConclusion = authBypass.capability;
+      } else if (privEsc) {
+        operationalConclusion = privEsc.capability;
+      } else {
+        operationalConclusion = breaches[0].capability;
+      }
+    }
+
+    // STEP 3: Identify unconfirmed but high-risk findings (supporting evidence)
     const criticalFindings = findings.filter(f => {
+      if (this.isExploitConfirmed(f)) return false; // Already in breaches
       const vector = this.analyzeAttackVector(f);
-      return vector.feasibilityScore >= 0.6 || vector.isConfirmed;
+      return vector.feasibilityScore >= 0.6;
     });
 
-    // Collect all attack chains
+    // Collect attack chains
     const allChains: AttackChain[] = [];
     for (const corr of correlations) {
       allChains.push(...corr.attackChains);
     }
 
-    // Generate contextual remediations
-    const recommendations = this.generateContextualRemediations(criticalFindings);
+    // Generate remediations - prioritize breaches
+    const prioritizedFindings = [...confirmedExploits, ...criticalFindings];
+    const recommendations = this.generateContextualRemediations(prioritizedFindings);
 
-    // Determine verdict
+    // STEP 4: Determine verdict based on attacker capability
     let verdict: DeploymentVerdict;
     let reason: string;
 
-    if (confirmedExploits.length > 0) {
-      // Any confirmed exploit = UNSAFE
+    if (breaches.length > 0) {
+      // Confirmed breach = FAIL. Not a high score, but proof of compromise.
       verdict = "UNSAFE";
-      const types = [...new Set(confirmedExploits.map(f => f.category))].slice(0, 3);
-      reason = `Confirmed exploitation: ${types.join(", ")}. Active attacks succeeded during testing.`;
+      reason = operationalConclusion;
     } else if (criticalFindings.some(f => this.calculateImpact(f) >= 0.9)) {
-      // High-impact vulnerabilities even without confirmation
+      // Unconfirmed but high-impact (RCE-level) - still unsafe
       verdict = "UNSAFE";
-      reason = `Critical vulnerabilities detected: potential for remote code execution or data breach.`;
+      const types = [...new Set(criticalFindings.filter(f => this.calculateImpact(f) >= 0.9).map(f => f.category))];
+      reason = `Critical vulnerability class detected: ${types.slice(0, 2).join(", ")}. Exploitation likely.`;
     } else if (criticalFindings.length > 0) {
-      // Significant findings that need review
+      // Moderate risk - needs human review
       verdict = "REVIEW_REQUIRED";
-      reason = `${criticalFindings.length} significant vulnerabilities require security review before deployment.`;
+      reason = `${criticalFindings.length} exploitable vulnerabilities detected. Security review required.`;
     } else if (findings.length > 0) {
-      // Low-risk findings only
-      verdict = "REVIEW_REQUIRED";
-      reason = `${findings.length} low-risk findings detected. Review recommended but not blocking.`;
+      // Low-risk only - informational
+      verdict = "SAFE";
+      reason = `${findings.length} low-risk findings. No exploitable vulnerabilities detected.`;
     } else {
       verdict = "SAFE";
-      reason = "No significant security vulnerabilities detected.";
+      reason = "No security vulnerabilities detected.";
     }
 
     return {
       verdict,
       reason,
+      breaches,
+      operationalConclusion,
       criticalFindings,
       confirmedExploits,
       attackChains: allChains,

@@ -1,15 +1,15 @@
 {
   "metadata": {
-    "generatedAt": "2026-02-06T22:25:07.396Z",
+    "generatedAt": "2026-02-06T22:45:47.532Z",
     "version": "1.0.0",
     "targetUrl": "http://localhost:3000",
-    "scanDuration": 337383
+    "scanDuration": 379329
   },
   "summary": {
-    "total": 16,
+    "total": 13,
     "bySeverity": {
       "CRITICAL": 2,
-      "HIGH": 8,
+      "HIGH": 5,
       "MEDIUM": 1,
       "LOW": 5
     },
@@ -18,14 +18,13 @@
       "Container Vulnerability": 6,
       "Security Misconfiguration": 1,
       "Security Vulnerability": 1,
-      "SQL Injection": 1,
-      "Broken Access Control": 3
+      "SQL Injection": 1
     },
     "deduplicated": 6
   },
   "findings": [
     {
-      "id": "d57a2647-1e0c-4b99-b4a6-055d244872e4",
+      "id": "da4e2089-5994-49c0-8ee7-b471e430c5b2",
       "title": "In netstat in BusyBox through 1.37.0, local users can launch of networ ...",
       "category": "OS Package Vulnerability",
       "severity": "MEDIUM",
@@ -46,7 +45,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2024-58251"
     },
     {
-      "id": "358b5fdb-f678-49f2-b5d6-e462a3c4e441",
+      "id": "21a181ae-ed7e-4297-bc8c-a6e09a35b363",
       "title": "In tar in BusyBox through 1.37.0, a TAR archive can have filenames hid ...",
       "category": "OS Package Vulnerability",
       "severity": "LOW",
@@ -67,7 +66,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-46394"
     },
     {
-      "id": "6010223a-35fa-469d-bb5d-71ddc1f91322",
+      "id": "0136b55f-9784-491a-b070-d44a6e8a24ad",
       "title": "openssl: OpenSSL: Remote code execution or Denial of Service via oversized Initialization Vector in CMS parsing",
       "category": "OS Package Vulnerability",
       "severity": "CRITICAL",
@@ -88,7 +87,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-15467"
     },
     {
-      "id": "9190b4c4-6e8b-429f-a33e-fbe6eb6ca70d",
+      "id": "5b427dc3-b0f5-4811-8a91-0586e736e2d5",
       "title": "openssl: OpenSSL: Arbitrary code execution due to out-of-bounds write in PKCS#12 processing",
       "category": "OS Package Vulnerability",
       "severity": "HIGH",
@@ -109,7 +108,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-69419"
     },
     {
-      "id": "23d0db45-8520-4e37-9231-aabbde4a0e32",
+      "id": "49e00114-4bf4-4fdb-baa1-94f293b84ab1",
       "title": "brace-expansion: juliangruber brace-expansion index.js expand redos",
       "category": "Container Vulnerability",
       "severity": "LOW",
@@ -130,7 +129,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-5889"
     },
     {
-      "id": "1e93d65c-c7bb-4873-bcb1-6e8404926db0",
+      "id": "067c62cb-d399-43c2-9f5c-3f88a449a568",
       "title": "cross-spawn: regular expression denial of service",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -151,7 +150,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2024-21538"
     },
     {
-      "id": "a6455bdd-b508-4f73-8758-a78226cacd43",
+      "id": "22fa85e5-9904-47ed-9824-cda2e0715005",
       "title": "jsdiff: denial of service vulnerability in parsePatch and applyPatch",
       "category": "Container Vulnerability",
       "severity": "LOW",
@@ -172,7 +171,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-24001"
     },
     {
-      "id": "99b2b8c1-f926-4807-bdb6-cf04a0a8d1de",
+      "id": "61253c21-d3bd-4035-815e-08598a36438e",
       "title": "glob: glob: Command Injection Vulnerability via Malicious Filenames",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -193,7 +192,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2025-64756"
     },
     {
-      "id": "19e4cdfc-f1f9-4ebb-a6b9-a19753fbea9c",
+      "id": "19926e4f-381c-47e1-8256-dafc30c125d5",
       "title": "npmcli: npm cli Incorrect Permission Assignment Local Privilege Escalation Vulnerability",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -213,7 +212,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-0775"
     },
     {
-      "id": "6947c2f9-f49d-498e-bd84-ca94e80f3dad",
+      "id": "85da8307-8590-4bb9-a22c-110b4dadd5bc",
       "title": "node-tar: tar: node-tar: Arbitrary file overwrite and symlink poisoning via unsanitized linkpaths in archives",
       "category": "Container Vulnerability",
       "severity": "HIGH",
@@ -234,7 +233,7 @@
       "reference": "https://avd.aquasec.com/nvd/cve-2026-23745"
     },
     {
-      "id": "405a05eb-dfd5-4acd-9c42-3f8efd9494db",
+      "id": "74829f8e-6c9f-4f9c-86b8-594189528655",
       "title": "X-Content-Type-Options Header Missing",
       "category": "Security Misconfiguration",
       "severity": "LOW",
@@ -259,7 +258,7 @@
       "reference": "https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/compatibility/gg622941(v=vs.85)\nhttps://owasp.org/www-community/Security_Headers"
     },
     {
-      "id": "cb7db6a7-877a-43e5-afd1-81f48a4c4258",
+      "id": "20821a24-e6ca-4d8e-a17f-842e08cc1c12",
       "title": "HTTP Only Site",
       "category": "Security Vulnerability",
       "severity": "LOW",
@@ -284,8 +283,8 @@
       "reference": "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html\nhttps://letsencrypt.org/"
     },
     {
-      "id": "e1a3ac69-b1b4-4c51-9f6b-f856934e5740",
-      "title": "Execute command without authentication: Test to see if we can execute a command without providing any credentials",
+      "id": "11dbabaa-9ff2-430c-85c1-5088edba93c1",
+      "title": "Command Injection Test: Test if the execute endpoint is vulnerable to command injection",
       "category": "SQL Injection",
       "severity": "CRITICAL",
       "endpoint": "POST /api/execute",
@@ -296,7 +295,7 @@
         "requiresAuth": true,
         "handlesData": true
       },
-      "evidence": "Request: POST /api/execute\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"status\":\"executed\",\"command\":\"ls\",\"output\":\"Command execution simulated\"}",
+      "evidence": "Request: POST /api/execute\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"status\":\"executed\",\"command\":\"ls -l\",\"output\":\"Command execution simulated\"}",
       "exploitability": 1,
       "confidence": 1,
       "riskScore": 1,
@@ -306,78 +305,6 @@
       "deduplicated": false,
       "duplicateCount": 0,
       "reference": "Use parameterized queries or prepared statements. Never concatenate user input into SQL queries."
-    },
-    {
-      "id": "7583c4e3-cf7b-4b5d-940a-3955ec535217",
-      "title": "Debug info without authentication: Test to see if we can get debug information without providing any credentials",
-      "category": "Broken Access Control",
-      "severity": "HIGH",
-      "endpoint": "GET /api/debug",
-      "endpointContext": {
-        "method": "GET",
-        "path": "/api/debug",
-        "acceptsUserInput": false,
-        "requiresAuth": true,
-        "handlesData": false
-      },
-      "evidence": "Request: GET /api/debug\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"env\":{\"NODE_ENV\":\"development\",\"cwd\":\"/app\",\"platform\":\"linux\"},\"users\":[\"admin\",\"user\"],\"activeSessions\":0,\"nodeVersion\":\"v18.20.8\"}",
-      "exploitability": 0.81,
-      "confidence": 1,
-      "riskScore": 0.85,
-      "sources": [
-        "AI Security Tester"
-      ],
-      "deduplicated": false,
-      "duplicateCount": 0,
-      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
-    },
-    {
-      "id": "d6e575cc-7cd0-4935-9a9e-abeb39f05fa1",
-      "title": "Read file without authentication: Test to see if we can read a file without providing any credentials",
-      "category": "Broken Access Control",
-      "severity": "HIGH",
-      "endpoint": "GET /api/file",
-      "endpointContext": {
-        "method": "GET",
-        "path": "/api/file",
-        "acceptsUserInput": false,
-        "requiresAuth": true,
-        "handlesData": true
-      },
-      "evidence": "Request: GET /api/file\nResponse Status: 200\nMatched: Status code 200 matches expected, Missing security header: x-content-type-options, Missing security header: x-frame-options, Missing security header: strict-transport-security\nResponse: {\"path\":\"\",\"content\":\"File read simulated\",\"warning\":\"Path traversal vulnerabilities may exist\"}",
-      "exploitability": 0.85,
-      "confidence": 1,
-      "riskScore": 0.87,
-      "sources": [
-        "AI Security Tester"
-      ],
-      "deduplicated": false,
-      "duplicateCount": 0,
-      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
-    },
-    {
-      "id": "7f4949fa-e175-4d96-842a-08969f3d9f95",
-      "title": "Get data by ID without authentication: Test to see if we can get data by an ID without providing any credentials",
-      "category": "Broken Access Control",
-      "severity": "HIGH",
-      "endpoint": "GET /api/data/:id",
-      "endpointContext": {
-        "method": "GET",
-        "path": "/api/data/:id",
-        "acceptsUserInput": true,
-        "requiresAuth": true,
-        "handlesData": true
-      },
-      "evidence": "Request: GET /api/data/123\nResponse Status: 404\nMatched: Body contains \"data\"\nResponse: {\"error\":\"Not found\",\"path\":\"/api/data/123\"}",
-      "exploitability": 0.94,
-      "confidence": 1,
-      "riskScore": 0.9,
-      "sources": [
-        "AI Security Tester"
-      ],
-      "deduplicated": false,
-      "duplicateCount": 0,
-      "reference": "Implement proper authentication and authorization checks. Use middleware to verify access."
     }
   ]
 }
