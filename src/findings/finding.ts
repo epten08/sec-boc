@@ -7,6 +7,14 @@ export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   CRITICAL: 4,
 };
 
+export interface EndpointContext {
+  method?: string;
+  path?: string;
+  acceptsUserInput: boolean;
+  requiresAuth: boolean;
+  handlesData: boolean;
+}
+
 export interface Finding {
   id: string;
   title: string;
@@ -14,6 +22,7 @@ export interface Finding {
   severity: Severity;
 
   endpoint?: string;
+  endpointContext?: EndpointContext;
   evidence: string;
 
   // Risk metrics

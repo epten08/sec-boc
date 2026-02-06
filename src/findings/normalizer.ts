@@ -31,6 +31,7 @@ export function normalizeFindings(
 
 function normalizeSingle(raw: RawFinding): Finding {
   const risk = riskEngine.calculateRisk(raw);
+  const endpointContext = riskEngine.parseEndpointContext(raw.endpoint);
 
   return {
     id: uuid(),
@@ -38,6 +39,7 @@ function normalizeSingle(raw: RawFinding): Finding {
     category: raw.category,
     severity: mapSeverity(raw.severityHint),
     endpoint: raw.endpoint,
+    endpointContext,
     evidence: raw.evidence ?? "No evidence provided",
     exploitability: risk.exploitability,
     confidence: risk.confidence,

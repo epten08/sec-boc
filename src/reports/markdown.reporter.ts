@@ -1,6 +1,7 @@
 import { Finding, Severity } from "../findings/finding";
 import { ReportingConfig } from "../core/config.loader";
 import { sortByRisk } from "../findings/normalizer";
+import { RiskEngine, Remediation } from "../findings/risk.engine";
 
 export interface MarkdownReporterOptions {
   targetUrl: string;
@@ -9,9 +10,11 @@ export interface MarkdownReporterOptions {
 
 export class MarkdownReporter {
   private config: ReportingConfig;
+  private riskEngine: RiskEngine;
 
   constructor(config: ReportingConfig) {
     this.config = config;
+    this.riskEngine = new RiskEngine();
   }
 
   generate(findings: Finding[], options: MarkdownReporterOptions): string {
@@ -186,6 +189,18 @@ export class MarkdownReporter {
         lines.push(`**Endpoint:** \`${finding.endpoint}\``);
       }
 
+      // Highlight endpoint context for dynamic findings
+      if (finding.endpointContext) {
+        const ctx = finding.endpointContext;
+        const flags: string[] = [];
+        if (ctx.acceptsUserInput) flags.push("accepts user input");
+        if (ctx.handlesData) flags.push("handles sensitive data");
+        if (!ctx.requiresAuth) flags.push("no auth required");
+        if (flags.length > 0) {
+          lines.push(`**Endpoint Risk Factors:** ${flags.join(", ")}`);
+        }
+      }
+
       if (finding.cve) {
         lines.push(`**CVE:** [${finding.cve}](https://nvd.nist.gov/vuln/detail/${finding.cve})`);
       }
@@ -201,7 +216,14 @@ export class MarkdownReporter {
         }
       }
 
-      lines.push(`**Sources:** ${finding.sources.join(", ")}`);
+      // Highlight AI-detected findings with special indicator
+      const isAIDetected = finding.sources.includes("AI Security Tester");
+      if (isAIDetected) {
+        lines.push(`**Sources:** ${finding.sources.join(", ")} 🤖`);
+        lines.push(`> *AI-detected: This vulnerability was identified through intelligent security testing that understands endpoint semantics and business logic.*`);
+      } else {
+        lines.push(`**Sources:** ${finding.sources.join(", ")}`);
+      }
 
       if (finding.deduplicated) {
         lines.push(`*Deduplicated from ${finding.duplicateCount + 1} occurrences*`);
@@ -218,6 +240,13 @@ export class MarkdownReporter {
         lines.push("```");
       }
 
+      // Add remediation guidance
+      const remediation = this.riskEngine.getRemediation(finding);
+      lines.push("");
+      lines.push(`**Remediation:** ${this.getPriorityEmoji(remediation.priority)} ${remediation.action}`);
+      lines.push(`> ${remediation.details}`);
+      lines.push(`> *Effort: ${remediation.effort}*`);
+
       if (finding.reference) {
         lines.push("");
         lines.push(`**Reference:** ${finding.reference}`);
@@ -229,6 +258,19 @@ export class MarkdownReporter {
     }
 
     return lines.join("\n");
+  }
+
+  private getPriorityEmoji(priority: Remediation["priority"]): string {
+    switch (priority) {
+      case "immediate":
+        return "🚨";
+      case "high":
+        return "⚠️";
+      case "medium":
+        return "📋";
+      case "low":
+        return "📝";
+    }
   }
 
   private generateRecommendations(findings: Finding[]): string {

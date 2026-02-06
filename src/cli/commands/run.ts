@@ -2,7 +2,8 @@ import { Command } from "commander";
 import { ScanOptions, parseSeverity, parseFormats } from "../options";
 import { loadConfig, validateConfig, SecurityBotConfig } from "../../core/config.loader";
 import { logger } from "../../core/logger";
-import { Severity, Finding } from "../../findings/finding";
+import { Finding } from "../../findings/finding";
+import { RiskEngine, RISK_THRESHOLDS } from "../../findings/risk.engine";
 import { Orchestrator } from "../../orchestrator/orchestrator";
 import { EnvironmentManager } from "../../orchestrator/environment.manager";
 import { ExecutionContext } from "../../orchestrator/context";
@@ -12,7 +13,6 @@ import { ZapApiScanner } from "../../scanners/dynamic/zap.api";
 import { AIScanner } from "../../scanners/ai/ai.scanner";
 import { Scanner, ScannerCategory } from "../../scanners/scanner";
 import { ReportGenerator } from "../../reports/report.generator";
-import { SEVERITY_WEIGHTS } from "../../findings/finding";
 
 export function createRunCommand(): Command {
   const cmd = new Command("scan")
@@ -175,16 +175,19 @@ async function runScan(options: ScanOptions): Promise<void> {
     await envManager.teardown();
   }
 
-  // Determine exit code based on findings
-  const exitCode = determineExitCode(findings, config.thresholds.failOn);
+  // Determine exit code based on risk scores (not just severity)
+  const riskEngine = new RiskEngine();
+  const riskThreshold = RISK_THRESHOLDS.standard;
+  const riskResult = riskEngine.exceedsRiskThreshold(findings, riskThreshold);
 
-  if (exitCode !== 0) {
-    logger.error(`Scan failed: findings at ${config.thresholds.failOn} severity or above detected`);
+  if (riskResult.exceeds) {
+    logger.error(`Scan failed: ${riskResult.reason}`);
+    logger.info(`Found ${riskResult.criticalFindings.length} finding(s) exceeding risk threshold`);
+    process.exit(1);
   } else {
-    logger.info("Scan completed successfully");
+    logger.info("Scan completed successfully - no high-risk findings detected");
+    process.exit(0);
   }
-
-  process.exit(exitCode);
 }
 
 function createScanners(config: SecurityBotConfig): Scanner[] {
@@ -218,14 +221,3 @@ function getEnabledCategories(config: SecurityBotConfig): ScannerCategory[] {
   return categories;
 }
 
-function determineExitCode(findings: Finding[], failOn: Severity): number {
-  const failThreshold = SEVERITY_WEIGHTS[failOn];
-
-  for (const finding of findings) {
-    if (SEVERITY_WEIGHTS[finding.severity] >= failThreshold) {
-      return 1;
-    }
-  }
-
-  return 0;
-}

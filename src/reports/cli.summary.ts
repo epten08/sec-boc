@@ -1,6 +1,7 @@
 import chalk from "chalk";
-import { Finding, Severity, SEVERITY_WEIGHTS } from "../findings/finding";
+import { Finding, Severity } from "../findings/finding";
 import { sortByRisk } from "../findings/normalizer";
+import { RiskEngine } from "../findings/risk.engine";
 
 export interface CliSummaryOptions {
   maxFindings?: number;
@@ -10,6 +11,7 @@ export interface CliSummaryOptions {
 
 export class CliSummary {
   private options: Required<CliSummaryOptions>;
+  private riskEngine: RiskEngine;
 
   constructor(options: CliSummaryOptions = {}) {
     this.options = {
@@ -18,6 +20,7 @@ export class CliSummary {
       verbose: false,
       ...options,
     };
+    this.riskEngine = new RiskEngine();
   }
 
   render(findings: Finding[]): void {
@@ -114,21 +117,39 @@ export class CliSummary {
       const finding = top[i];
       const severity = this.getSeverityBadge(finding.severity);
       const title = this.truncate(finding.title, 50);
+      const isAI = finding.sources.includes("AI Security Tester");
+      const aiIndicator = isAI ? chalk.cyan(" [AI]") : "";
 
-      console.log(`  ${chalk.gray(`${i + 1}.`)} ${severity} ${title}`);
+      console.log(`  ${chalk.gray(`${i + 1}.`)} ${severity} ${title}${aiIndicator}`);
 
       if (this.options.verbose) {
         console.log(chalk.gray(`     Category: ${finding.category}`));
-        console.log(chalk.gray(`     Risk: ${finding.riskScore.toFixed(2)} | Sources: ${finding.sources.join(", ")}`));
+        console.log(chalk.gray(`     Risk: ${finding.riskScore.toFixed(2)} | Confidence: ${finding.confidence.toFixed(2)} | Sources: ${finding.sources.join(", ")}`));
 
         if (finding.cve) {
           console.log(chalk.gray(`     CVE: ${finding.cve}`));
+        }
+
+        // Show endpoint context if available
+        if (finding.endpointContext) {
+          const ctx = finding.endpointContext;
+          const flags: string[] = [];
+          if (ctx.acceptsUserInput) flags.push("user-input");
+          if (ctx.handlesData) flags.push("sensitive-data");
+          if (!ctx.requiresAuth) flags.push("no-auth");
+          if (flags.length > 0) {
+            console.log(chalk.gray(`     Endpoint Risk: ${flags.join(", ")}`));
+          }
         }
 
         if (this.options.showEvidence && finding.evidence) {
           const evidence = this.truncate(finding.evidence, 80);
           console.log(chalk.gray(`     Evidence: ${evidence}`));
         }
+
+        // Show remediation action
+        const remediation = this.riskEngine.getRemediation(finding);
+        console.log(chalk.cyan(`     Fix: ${remediation.action}`));
 
         console.log();
       }
